@@ -99,8 +99,8 @@ input_data_type1, expected_output_type1 = generate_samples_mm_yy(10000)
 input_data_type2, expected_output_type2 = generate_samples_dd_mm_yy(10000)
 input_data_type3, expected_output_type3 = generate_samples_point_sep(10000)
 
-input_data = input_data_type2
-target_data = expected_output_type2
+input_data = input_data_type2 + input_data_type1 + input_data_type3
+target_data = expected_output_type2 + expected_output_type1 + expected_output_type3
 
 
 def create_testing_data(input_data, target_data):
