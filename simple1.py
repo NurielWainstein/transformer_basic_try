@@ -1,5 +1,6 @@
 import copy
-
+import json
+import os
 import numpy as np
 import math
 import torch
@@ -94,14 +95,113 @@ def generate_samples_point_sep(num_samples):
 
     return input_data, expected_output
 
+
+def generate_samples_mm_mm_yyyy(num_samples):
+    input_data = []
+    expected_output = []
+
+    for _ in range(num_samples):
+        # Generate random characters before and after the date
+        random_chars = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=random.randint(0, 10)))
+
+        # Generate random months
+        month1 = random.randint(1, 12)
+        month2 = random.randint(month1, 12)
+
+        # Generate random year
+        year = random.randint(2000, 2099)
+
+        # Generate the input and output strings
+        input_string = f"{random_chars}{month1:02d} - {month2:02d}/{year}{random_chars}"
+        output_string = f"01/{month1:02d}/{year}-01/{month2:02d}/{year}"
+
+        input_data.append(input_string)
+        expected_output.append(output_string)
+
+    return input_data, expected_output
+
+def generate_samples_mm_mm_yyyy_2(num_samples):
+    input_data = []
+    expected_output = []
+
+    for _ in range(num_samples):
+        # Generate random characters before and after the date
+        random_chars = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=random.randint(0, 10)))
+
+        # Generate random months
+        month1 = random.randint(1, 12)
+        month2 = random.randint(month1, 12)
+
+        # Generate random year
+        year = random.randint(20, 99)
+
+        # Generate the input and output strings
+        input_string = f"{random_chars}{month1} - {month2}/{year}{random_chars}"
+        output_string = f"01/{month1}/{year}-01/{month2}/{year}"
+
+        input_data.append(input_string)
+        expected_output.append(output_string)
+
+    return input_data, expected_output
+
+def generate_samples_mm_yy_mm_yy(num_samples):
+    input_data = []
+    expected_output = []
+
+    for _ in range(num_samples):
+        # Generate random characters before and after the date
+        random_chars = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=random.randint(0, 10)))
+
+        # Generate random months
+        month1 = random.randint(1, 12)
+        month2 = random.randint(month1, 12)
+
+        # Generate random year
+        year = random.randint(20, 99)
+
+        # Generate the input and output strings
+        input_string = f"{random_chars}{month1}/{year} - {month2}/{year}{random_chars}"
+        output_string = f"01/{month1}/{year}-01/{month2}/{year}"
+
+        input_data.append(input_string)
+        expected_output.append(output_string)
+
+    return input_data, expected_output
+
+def generate_samples_mm_yy_mm_yy(num_samples):
+    input_data = []
+    expected_output = []
+
+    for _ in range(num_samples):
+        # Generate random characters before and after the date
+        random_chars = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=random.randint(0, 10)))
+
+        # Generate random months
+        month1 = random.randint(1, 12)
+        month2 = random.randint(month1, 12)
+
+        # Generate random year
+        year = random.randint(20, 99)
+
+        # Generate the input and output strings
+        input_string = f"{random_chars}{month1}/{year} - {month2}/{year}{random_chars}"
+        output_string = f"01/{month1}.{year}-01/{month2}/{year}"
+
+        input_data.append(input_string)
+        expected_output.append(output_string)
+
+    return input_data, expected_output
+
 # Generate 10,000 samples
-input_data_type1, expected_output_type1 = generate_samples_mm_yy(10000)
-input_data_type2, expected_output_type2 = generate_samples_dd_mm_yy(10000)
-input_data_type3, expected_output_type3 = generate_samples_point_sep(10000)
+input_data_type1, expected_output_type1 = generate_samples_mm_yy(5000)
+input_data_type2, expected_output_type2 = generate_samples_dd_mm_yy(5000)
+input_data_type3, expected_output_type3 = generate_samples_point_sep(5000)
+input_data_type4, expected_output_type4 = generate_samples_mm_mm_yyyy(5000)
+input_data_type5, expected_output_type5 = generate_samples_mm_mm_yyyy_2(5000)
+input_data_type6, expected_output_type6 = generate_samples_mm_yy_mm_yy(5000)
 
-input_data = input_data_type2 + input_data_type1 + input_data_type3
-target_data = expected_output_type2 + expected_output_type1 + expected_output_type3
-
+input_data = input_data_type1+input_data_type2+input_data_type3+input_data_type4+input_data_type5+input_data_type6
+target_data = expected_output_type1+expected_output_type2+expected_output_type3+expected_output_type4+expected_output_type5+expected_output_type6
 
 def create_testing_data(input_data, target_data):
     length = len(input_data)
@@ -122,8 +222,7 @@ test_input, test_target = create_testing_data(input_data, target_data)
 print("done_generating_data")
 
 tokenizer_regex = RegexpTokenizer('\d+|/+|\.+|-+')
-def tokenizer(input_src, output_tgt):
-    words_ids = {}
+def tokenizer(input_src, output_tgt, words_ids={}):
 
     words = []
     data = zip(input_src, output_tgt)
@@ -135,21 +234,32 @@ def tokenizer(input_src, output_tgt):
         words.extend(input_words)
         words.extend(output_words)
 
-    id = 0
+    words_ids["<sos>"] = 0
+    words_ids["<eos>"] = 1
+    words_ids["<pad>"] = 2
+    words_ids["<unk>"] = 3
+
+    id = len(words_ids)
     for word in words:
         if word not in words_ids.keys():
             words_ids[word] = id
             id += 1
 
-    words_ids["<sos>"] = id
-    words_ids["<eos>"] = id+1
-    words_ids["<pad>"] = id+2
-    words_ids["<unk>"] = id+3
-
     return words_ids
 
 
-words_ids = tokenizer(input_data, target_data)
+if os.path.exists("words_dictionary.json"):
+    with open('words_dictionary.json', "r") as json_file:
+        las_words_ids = json.load(json_file)
+        words_ids = tokenizer(input_data, target_data, words_ids=las_words_ids)
+        os.remove('words_dictionary.json')
+    with open('words_dictionary.json', "w") as json_file:
+        json.dump(words_ids, json_file)
+else:
+    with open('words_dictionary.json', "w") as json_file:
+        words_ids = tokenizer(input_data, target_data)
+        json.dump(words_ids, json_file)
+
 
 def convert_data_to_matrices(words_ids, data):
     for index_in_data, sentence in enumerate(data):
@@ -234,7 +344,7 @@ class PositionalEncoding(nn.Module):
 
 
 class TransformerModel(nn.Module):
-    def __init__(self, vocab_size=len(words_ids), d_model=64, nhead=4, num_layers=6, dropout=0.1):
+    def __init__(self, vocab_size=300, d_model=64, nhead=4, num_layers=6, dropout=0.1):
         super(TransformerModel, self).__init__()
         self.embedding = nn.Embedding(vocab_size, d_model)
         self.pos_encoder = PositionalEncoding(d_model, 0.1)
@@ -268,12 +378,16 @@ class TransformerModel(nn.Module):
 
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
 model = TransformerModel().to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+# fine tuning
+model.load_state_dict(torch.load("transformer4_model.pt"))
+
+
+# training
+optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
 criterion = nn.MSELoss()
 
-for epoch in range(10):
+for epoch in range(5):
     epoch_loss = 0
     counter = 1
     last_step = len(my_dataloader)
@@ -287,10 +401,10 @@ for epoch in range(10):
         inputs = inputs.to(device)
         input_mask = input_mask.to(device)
 
-        encoded_target_data = torch.zeros(batch_size, 64, len(words_ids))
+        encoded_target_data = torch.zeros(batch_size, 64, 300)
         for i, seq in enumerate(expected_outputs):
             for j, word in enumerate(seq):
-                encoding = torch.zeros(len(words_ids))
+                encoding = torch.zeros(300)
                 encoding[word] = 1
                 encoded_target_data[i][j] = encoding.unsqueeze(0)
 
@@ -312,9 +426,7 @@ for epoch in range(10):
     print('Epoch {}, Loss: {}'.format(epoch + 1, epoch_loss))
 torch.save(model.state_dict(), "transformer4_model.pt")
 
-
-
-
+# testing
 model.load_state_dict(torch.load("transformer4_model.pt"))
 model.eval()
 
@@ -322,9 +434,61 @@ x = copy.copy(test_input)
 test_data = test_input
 
 with torch.no_grad():
+    data = [
+        'פרטנר אירית 7.12-6.01',
+        'פרטנר אירית 07.12-06.01.2021',
+        'פרטנר אירית 07.12-06.01.21',
+        '31/01/2020 to 12/04/2020',
+        '31/01/2020 - 12/04/2020',
+        '01/2020 - 04/2020',
+        '01-04/2020',
+        '04/20,05/20',
+        '01-04/20',
+        '01/20-12/20',
+        '01-04/22',
+        '04-06/2022',
+        '04-06/22',
+        '04-06/22',
+        '04-06/2022',
+        '04-06/2022',
+    ]
+
+    infrance_data_copy = data.copy()
+
+    infrance_data = data.copy()
+
+    convert_data_to_matrices(words_ids, infrance_data)
+
+    infrance_mask = create_masking(infrance_data)
+
+    infrance_matrics = torch.cat(infrance_data)
+
+    infrance_mask = infrance_mask.to(device)
+    infrance_matrics = infrance_matrics.to(device)
+
+    infrance_matrics = torch.transpose(infrance_matrics, 0, 1)
+
+    output_infrance = model(infrance_matrics , infrance_mask)
+    output_infrance = output_infrance.argmax(-1).squeeze()
+
+    for index, i in enumerate(torch.split(output_infrance, 1, dim=-1)):
+        output_string = ''
+        for j in i.squeeze():
+            for word in words_ids.keys():
+                if j.item() == words_ids[word]:
+                    output_string += word
+        print(infrance_data_copy[index])
+        print(output_string)
+
+
+
+
+with torch.no_grad():
     convert_data_to_matrices(words_ids, test_data)
     convert_data_to_matrices(words_ids, test_target)
+
     test_mask = create_masking(test_data)
+
     test_matrics = torch.cat(test_data)
     test_matrics_target = torch.cat(test_target)
 
@@ -334,8 +498,10 @@ with torch.no_grad():
 
     test_matrics_target = torch.transpose(test_matrics_target, 0, 1)
     test_matrics = torch.transpose(test_matrics, 0, 1)
+
     output = model(test_matrics , test_mask )
     output = output.argmax(-1).squeeze()
+
 
     def calculate_recall(output, expected_output):
         # Initialize an array to store recall values for each class
@@ -429,10 +595,10 @@ with torch.no_grad():
     # print(f'{precition} - precision')
     # print(f'{(2*precition*recal)/precition+recal} - F1')
 
-    for index, i in enumerate(torch.split(output, 1, dim=-1)):
-        output_string = ''
-        for j in i.squeeze():
-            for word in words_ids.keys():
-                if j.item() == words_ids[word]:
-                    output_string += word
-        print(output_string)
+    # for index, i in enumerate(torch.split(output, 1, dim=-1)):
+    #     output_string = ''
+    #     for j in i.squeeze():
+    #         for word in words_ids.keys():
+    #             if j.item() == words_ids[word]:
+    #                 output_string += word
+    #     print(output_string)
